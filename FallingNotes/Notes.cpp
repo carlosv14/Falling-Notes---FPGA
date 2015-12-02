@@ -9,6 +9,7 @@ Notes::Notes(int x, int y, int width, int height, unsigned char * img, char type
     this->img = img;
     this->active = 1;
     this->type = type;
+    this->exploted= 0;
 }
 
    

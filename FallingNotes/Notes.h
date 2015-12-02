@@ -6,6 +6,7 @@ class Notes
 {
     public:
         char type;
+        int exploted;
         int x,y,width,height;
         unsigned char * img;
         int active;

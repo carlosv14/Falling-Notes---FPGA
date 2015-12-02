@@ -16,6 +16,8 @@ int ifpos = 10;
 int ifneg = 5;
 int ifbonus= ifpos+ifneg;
 int nivel = 1;
+int errCounter = 0;
+int passedLimit = 2;
 unsigned long Index = 0;
 unsigned long TimerCount = 0;
 volatile unsigned char PlayingSound;
@@ -23,7 +25,7 @@ volatile unsigned char PlayingSound;
 const char * poscomments[] = {"NICE!","GREAT!","+10!","GOOD!"};
 const char * negcomments[] = {"OOPS!","-5!","WRONG!","BAD MOVE!"};
 unsigned char scorearea[ 9*((8* SCORECHARS)+1) ];
-
+int passed =0;
 int delaytime=155;
 SmallFSFile audiofile;
 
@@ -153,7 +155,7 @@ unsigned char cval[4];
 int note_width = 12;
 int note_height = 10;
 int contador;
-int last_known_number;
+
 Notes * Carril1[10];
 Notes * Carril2[10];
 Notes * Carril3[10];
@@ -247,17 +249,14 @@ BLACK,BLACK,BLACK,PURPLE,PURPLE,PURPLE,PURPLE,PURPLE,PURPLE,BLACK,BLACK,BLACK
 unsigned char * colors[] = { GREENCOLOR,REDCOLOR,BLUECOLOR};
 char types[] = { 'v','r','b'};
 boolean valuefirst = true;
-void addRandomNote(boolean two)
+
+void addRandomNote()
 {
 	int i = 0;
          i= xrand() %4;
         int c =  xrand() %3;
-        if(two && valuefirst){
-          i = 0;
-          valuefirst = false;
-        }else if(two &&!valuefirst){
-          i = 2;
-        }        
+    
+      
         if(i==1 && index2<10 && !hasCar2){
           i= 40 + 12*i;
           Carril2[index2] = new Notes(i,10,note_width,note_height,colors[c],types[c]);
@@ -268,6 +267,7 @@ void addRandomNote(boolean two)
            Carril3[index3] = new Notes(i,10,note_width,note_height,colors[c],types[c]);
           index3++;
           hasCar3=true;
+
         }else if(i==3&& index4<10 && !hasCar4){
           i = 120+12;
            Carril4[index4] = new Notes(i,10,note_width,note_height,colors[c],types[c]);
@@ -377,68 +377,22 @@ void removeComment(int pos, int carril,const char *type){
         hasComment = 0;
   
 }
-int  commentpos = 0;
+  int  commentpos = 0;
 
-void handleMultipleMovement(unsigned char event){
-  
-  if(index1>0 && index2>0){
-    if(event==1 && Carril1[index1-1]->active == 1 && (Carril1[index1-1]->y>100 && Carril1[index1-1]->y<104)){
-          Carril1[index1-1]->active =0;
-          if(Carril1[index1-1]->type == 'v'){
-          score+=ifpos;
-           commentpos = comment(1,"g");
-          }else if(Carril1[index1-1]->type == 'r'){
-          if(score>5)
-          score-=ifneg;
-           commentpos = comment(1,"b");
-          }else if(Carril1[index1-1]->type == 'b'){
-          score+=ifbonus;
-           commentpos = comment(1,"y");
-          }
-          update_score();
-         
-        
-      }
-      Carril1[index1-1]->drawPiece();
-      Carril1[index1-1]->moveNote();
-      if(Carril1[index1-1]->active==0){
-           Carril1[index1-1]->deletePiece();
-           delete Carril1[index1-1];     
-           index1--;  
-           hasCar1= false;
-            VGA.setColor(160,82,45);
-            VGA.drawLine(0,105,158,105);
-      }
-      if(event==2 && Carril2[index2-1]->active == 1 && (Carril2[index2-1]->y>100 && Carril2[index2-1]->y<104)){
-          Carril2[index2-1]->active =0;
-          if(Carril2[index2-1]->type == 'v'){
-          score+=ifpos;
-           commentpos = comment(2,"g");
-          }else if(Carril2[index2-1]->type == 'r'){
-          if(score>5)
-          score-=ifneg;
-           commentpos = comment(2,"b");
-          }else if(Carril2[index2-1]->type == 'b'){
-          score+=ifbonus;
-           commentpos = comment(2,"y");
-          }
-          update_score();
-         
-        
-      }
-      Carril2[index2-1]->drawPiece();
-      Carril2[index2-1]->moveNote();
-      if(Carril2[index2-1]->active==0){
-           Carril2[index2-1]->deletePiece();
-           delete Carril2[index2-1];     
-           index2--; 
-            hasCar2= false; 
-            VGA.setColor(160,82,45);
-            VGA.drawLine(0,105,158,105);
-      }
-    
-  }
-  delay(15);
+void drawX(){
+ VGA.setColor(RED);
+ if(errCounter==1)
+ VGA.printtext(0,0,"X",true);
+ else if(errCounter==2)
+ VGA.printtext(6,0,"X",true);
+ else if(errCounter==3){
+ VGA.printtext(12,0,"X",true);
+ if(contador%133){
+ nivel++;
+ if(nivel<=3)
+  loop();
+ }
+ }
 }
 void handleMovement(unsigned char event){
    
@@ -448,9 +402,12 @@ if(index1>0){
           if(Carril1[index1-1]->type == 'v'){
           score+=ifpos;
            commentpos = comment(1,"g");
+           Carril1[index1-1]->exploted = 1;
           }else if(Carril1[index1-1]->type == 'r'){
           if(score>5)
           score-=ifneg;
+          errCounter++;
+          drawX();
            commentpos = comment(1,"b");
           }else if(Carril1[index1-1]->type == 'b'){
           score+=ifbonus;
@@ -463,6 +420,8 @@ if(index1>0){
       Carril1[index1-1]->drawPiece();
       Carril1[index1-1]->moveNote();
       if(Carril1[index1-1]->active==0){
+        if(Carril1[index1-1]->type == 'v' &&  Carril1[index1-1]->exploted == 0)
+            passed++;
            Carril1[index1-1]->deletePiece();
            delete Carril1[index1-1];     
            index1--;  
@@ -476,9 +435,13 @@ if(index1>0){
           if(Carril2[index2-1]->type == 'v'){
           score+=ifpos;
            commentpos = comment(2,"g");
+           Carril2[index2-1]->exploted = 1;
+
           }else if(Carril2[index2-1]->type == 'r'){
           if(score>5)
           score-=ifneg;
+           errCounter++;
+           drawX();
            commentpos = comment(2,"b");
           }else if(Carril2[index2-1]->type == 'b'){
           score+=ifbonus;
@@ -491,6 +454,8 @@ if(index1>0){
       Carril2[index2-1]->drawPiece();
       Carril2[index2-1]->moveNote();
       if(Carril2[index2-1]->active==0){
+        if(Carril2[index2-1]->type == 'v' && Carril2[index2-1]->exploted == 0)
+          passed++;
            Carril2[index2-1]->deletePiece();
            delete Carril2[index2-1];     
            index2--; 
@@ -504,9 +469,13 @@ if(index1>0){
           if(Carril3[index3-1]->type == 'v'){
           score+=ifpos;
            commentpos = comment(3,"g");
+           Carril3[index3-1]->exploted = 1;
+
           }else if(Carril3[index3-1]->type == 'r'){
           if(score>5)
           score-=ifneg;
+           errCounter++;
+           drawX();
            commentpos = comment(3,"b");
           }else if(Carril3[index3-1]->type == 'b'){
           score+=ifbonus;
@@ -519,6 +488,8 @@ if(index1>0){
       Carril3[index3-1]->drawPiece();
       Carril3[index3-1]->moveNote();
       if(Carril3[index3-1]->active==0){
+        if(Carril3[index3-1]->type == 'v' &&Carril3[index3-1]->exploted ==0 )
+            passed++;
            Carril3[index3-1]->deletePiece();
            delete Carril3[index3-1];     
            index3--; 
@@ -534,9 +505,12 @@ if(index1>0){
           if(Carril4[index4-1]->type == 'v'){
           score+=ifpos;
            commentpos = comment(4,"g");
+           Carril4[index4-1]->exploted = 1;
           }else if(Carril4[index4-1]->type == 'r'){
           if(score>5)
           score-=ifneg;
+           errCounter++;
+           drawX();
            commentpos = comment(4,"b");
           }else if(Carril4[index4-1]->type == 'b'){
           score+=ifbonus;
@@ -549,6 +523,8 @@ if(index1>0){
       Carril4[index4-1]->drawPiece();
       Carril4[index4-1]->moveNote();
       if(Carril4[index4-1]->active==0){
+        if(Carril4[index4-1]->type == 'v' &&  Carril4[index4-1]->exploted == 0)
+            passed++;
            Carril4[index4-1]->deletePiece();
            delete Carril4[index4-1];     
            index4--;  
@@ -558,10 +534,16 @@ if(index1>0){
       }
     }
     
+  if(passed == passedLimit){
+    errCounter++;
+    Serial.println(passed);
+    passed = 0;
+    drawX();
+  }
+    
   
   
-  
-    delay(15);
+    delay(10);
     
   
 }
@@ -629,7 +611,6 @@ void score_draw()
 
 
 
-
 void drawBoard(){
   VGA.setColor(160,82,45);
   VGA.drawLine(40,0,40,120);
@@ -638,8 +619,9 @@ void drawBoard(){
   VGA.drawLine(0,105,158,105);
 }
 
+
 void prepareLevel(const char * soundfile){
- // SoundPlay(soundfile);
+ SoundPlay(soundfile);
   drawBoard();
   score_init();
   score = 0;
@@ -681,6 +663,8 @@ void changeLevel(int level){
   index2 = 0;
   index3 =0;
   index4 = 0;
+  errCounter= 0;
+  passed = 0;
   if(nivel==1)
   prepareLevel("sax.snd");
   if(nivel==2)
@@ -690,17 +674,15 @@ void changeLevel(int level){
 void level(int modtime){
   while(true){
      contador++;
-/*if (PlayingSound) {
+if (PlayingSound) {
         AudioFillBuffer();
-    }*/
+    }
 
- if(contador%modtime==0){
-   //addRandomNote(false);
-   addRandomNote(true);
-  addRandomNote(true);
- //  handleMultipleMovement(readValues());
-   //Serial.println(contador);
+ if(contador%modtime==0){ 
+      addRandomNote();
  }
+
+ 
 if(nivel==1){
       if(contador==2750){
            nivel = 2;
@@ -765,9 +747,8 @@ if(nivel==1){
  
   if(hasComment && (contador%modtime==0 )&& commentcarril!=0)
       removeComment(commentpos,commentcarril,ctype);
-  
 
-  handleMultipleMovement(readValues());
+  handleMovement(readValues());
     
   }
   
@@ -815,6 +796,5 @@ void loop()
     delaytime=100;
   changeLevel(nivel);
   level(delaytime);
-  
 
 }
