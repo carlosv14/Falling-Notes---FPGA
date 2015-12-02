@@ -145,6 +145,10 @@ void _zpu_interrupt ()
 }
 
 int hasComment=0;
+boolean hasCar1=false;
+boolean hasCar2=false;
+boolean hasCar3=false;
+boolean hasCar4=false;
 unsigned char cval[4];
 int note_width = 12;
 int note_height = 10;
@@ -239,31 +243,43 @@ BLACK,BLACK,PURPLE,PURPLE,PURPLE,PURPLE,PURPLE,PURPLE,PURPLE,PURPLE,BLACK,BLACK,
 BLACK,BLACK,BLACK,PURPLE,PURPLE,PURPLE,PURPLE,PURPLE,PURPLE,BLACK,BLACK,BLACK
 };
 
+
 unsigned char * colors[] = { GREENCOLOR,REDCOLOR,BLUECOLOR};
 char types[] = { 'v','r','b'};
-void addRandomNote()
+boolean valuefirst = true;
+void addRandomNote(boolean two)
 {
-	int i = xrand() %4;
+	int i = 0;
+         i= xrand() %4;
         int c =  xrand() %3;
-        if(i==1 && index2<10){
+        if(two && valuefirst){
+          i = 0;
+          valuefirst = false;
+        }else if(two &&!valuefirst){
+          i = 2;
+        }        
+        if(i==1 && index2<10 && !hasCar2){
           i= 40 + 12*i;
           Carril2[index2] = new Notes(i,10,note_width,note_height,colors[c],types[c]);
           index2++;
-        }else if(i==2&& index3<10){
+          hasCar2=true;
+        }else if(i==2&& index3<10 && !hasCar3){
           i = 80 + 12;
            Carril3[index3] = new Notes(i,10,note_width,note_height,colors[c],types[c]);
           index3++;
-        }else if(i==3&& index4<10){
+          hasCar3=true;
+        }else if(i==3&& index4<10 && !hasCar4){
           i = 120+12;
            Carril4[index4] = new Notes(i,10,note_width,note_height,colors[c],types[c]);
           index4++;
-        }else if(i==0 && index1<10){
+          hasCar4=true;
+        }else if(i==0 && index1<10 &&!hasCar1){
           i=12; 
            Carril1[index1] = new Notes(i,10,note_width,note_height,colors[c],types[c]);
           index1++;
+          hasCar1=true;
         }
-       
-    
+      
 }
 
 int randomComment()
@@ -275,6 +291,7 @@ int randomComment()
 
 int  commentcarril = 0;
 const char *ctype;
+
 int comment(int carril, const char *type){
   int r = randomComment();
         if(type =="g"){
@@ -362,19 +379,19 @@ void removeComment(int pos, int carril,const char *type){
 }
 int  commentpos = 0;
 
-void handleMovement(unsigned char event){
-  if(index1>0){
-    for(int i = 0; i<index1; i++){
-      if(event==1 && Carril1[i]->active == 1 && (Carril1[i]->y>100 && Carril1[i]->y<104)){
-          Carril1[i]->active =0;
-          if(Carril1[i]->type == 'v'){
+void handleMultipleMovement(unsigned char event){
+  
+  if(index1>0 && index2>0){
+    if(event==1 && Carril1[index1-1]->active == 1 && (Carril1[index1-1]->y>100 && Carril1[index1-1]->y<104)){
+          Carril1[index1-1]->active =0;
+          if(Carril1[index1-1]->type == 'v'){
           score+=ifpos;
            commentpos = comment(1,"g");
-          }else if(Carril1[i]->type == 'r'){
+          }else if(Carril1[index1-1]->type == 'r'){
           if(score>5)
           score-=ifneg;
            commentpos = comment(1,"b");
-          }else if(Carril1[i]->type == 'b'){
+          }else if(Carril1[index1-1]->type == 'b'){
           score+=ifbonus;
            commentpos = comment(1,"y");
           }
@@ -382,59 +399,116 @@ void handleMovement(unsigned char event){
          
         
       }
-      Carril1[i]->drawPiece();
-      Carril1[i]->moveNote();
-      if(Carril1[i]->active==0){
-           Carril1[i]->deletePiece();
-           delete Carril1[i];     
+      Carril1[index1-1]->drawPiece();
+      Carril1[index1-1]->moveNote();
+      if(Carril1[index1-1]->active==0){
+           Carril1[index1-1]->deletePiece();
+           delete Carril1[index1-1];     
            index1--;  
+           hasCar1= false;
             VGA.setColor(160,82,45);
             VGA.drawLine(0,105,158,105);
       }
-    }
-  }
-  else if(index2>0){
-    for(int i = 0; i<index2; i++){
-        if(event==2 && Carril2[i]->active == 1 && (Carril2[i]->y>100 && Carril2[i]->y<104)){
-          Carril2[i]->active =0;
-         if(Carril2[i]->type == 'v'){
+      if(event==2 && Carril2[index2-1]->active == 1 && (Carril2[index2-1]->y>100 && Carril2[index2-1]->y<104)){
+          Carril2[index2-1]->active =0;
+          if(Carril2[index2-1]->type == 'v'){
           score+=ifpos;
            commentpos = comment(2,"g");
-          }else if(Carril2[i]->type == 'r'){
+          }else if(Carril2[index2-1]->type == 'r'){
           if(score>5)
           score-=ifneg;
            commentpos = comment(2,"b");
-          }else if(Carril2[i]->type == 'b'){
+          }else if(Carril2[index2-1]->type == 'b'){
           score+=ifbonus;
            commentpos = comment(2,"y");
           }
           update_score();
-        
+         
         
       }
-      Carril2[i]->drawPiece();
-      Carril2[i]->moveNote();
-      if(Carril2[i]->active==0){
-           Carril2[i]->deletePiece();
-           delete Carril2[i];   
-           index2--;  
+      Carril2[index2-1]->drawPiece();
+      Carril2[index2-1]->moveNote();
+      if(Carril2[index2-1]->active==0){
+           Carril2[index2-1]->deletePiece();
+           delete Carril2[index2-1];     
+           index2--; 
+            hasCar2= false; 
             VGA.setColor(160,82,45);
             VGA.drawLine(0,105,158,105);
       }
-    }
+    
   }
-   else if(index3>0){
-    for(int i = 0; i<index3; i++){
-      if(event==3 && Carril3[i]->active == 1 && (Carril3[i]->y>100 && Carril3[i]->y<104)){
-          Carril3[i]->active =0;
-            if(Carril3[i]->type == 'v'){
+  delay(15);
+}
+void handleMovement(unsigned char event){
+   
+if(index1>0){
+  if(event==1 && Carril1[index1-1]->active == 1 && (Carril1[index1-1]->y>100 && Carril1[index1-1]->y<104)){
+          Carril1[index1-1]->active =0;
+          if(Carril1[index1-1]->type == 'v'){
+          score+=ifpos;
+           commentpos = comment(1,"g");
+          }else if(Carril1[index1-1]->type == 'r'){
+          if(score>5)
+          score-=ifneg;
+           commentpos = comment(1,"b");
+          }else if(Carril1[index1-1]->type == 'b'){
+          score+=ifbonus;
+           commentpos = comment(1,"y");
+          }
+          update_score();
+         
+        
+      }
+      Carril1[index1-1]->drawPiece();
+      Carril1[index1-1]->moveNote();
+      if(Carril1[index1-1]->active==0){
+           Carril1[index1-1]->deletePiece();
+           delete Carril1[index1-1];     
+           index1--;  
+           hasCar1= false;
+            VGA.setColor(160,82,45);
+            VGA.drawLine(0,105,158,105);
+      }
+    }else if(index2>0){
+      if(event==2 && Carril2[index2-1]->active == 1 && (Carril2[index2-1]->y>100 && Carril2[index2-1]->y<104)){
+          Carril2[index2-1]->active =0;
+          if(Carril2[index2-1]->type == 'v'){
+          score+=ifpos;
+           commentpos = comment(2,"g");
+          }else if(Carril2[index2-1]->type == 'r'){
+          if(score>5)
+          score-=ifneg;
+           commentpos = comment(2,"b");
+          }else if(Carril2[index2-1]->type == 'b'){
+          score+=ifbonus;
+           commentpos = comment(2,"y");
+          }
+          update_score();
+         
+        
+      }
+      Carril2[index2-1]->drawPiece();
+      Carril2[index2-1]->moveNote();
+      if(Carril2[index2-1]->active==0){
+           Carril2[index2-1]->deletePiece();
+           delete Carril2[index2-1];     
+           index2--; 
+            hasCar2= false; 
+            VGA.setColor(160,82,45);
+            VGA.drawLine(0,105,158,105);
+      }
+    }else if(index3>0){
+      if(event==3 && Carril3[index3-1]->active == 1 && (Carril3[index3-1]->y>100 && Carril3[index3-1]->y<104)){
+          Carril3[index3-1]->active =0;
+          if(Carril3[index3-1]->type == 'v'){
           score+=ifpos;
            commentpos = comment(3,"g");
-          }else if(Carril3[i]->type == 'r'){
+          }else if(Carril3[index3-1]->type == 'r'){
           if(score>5)
           score-=ifneg;
            commentpos = comment(3,"b");
-          }else if(Carril3[i]->type == 'b'){
+          }else if(Carril3[index3-1]->type == 'b'){
           score+=ifbonus;
            commentpos = comment(3,"y");
           }
@@ -442,45 +516,51 @@ void handleMovement(unsigned char event){
          
         
       }
-      Carril3[i]->drawPiece();
-      Carril3[i]->moveNote();
-      if(Carril3[i]->active==0){
-           Carril3[i]->deletePiece();
-           delete Carril3[i];   
-           index3--;  
+      Carril3[index3-1]->drawPiece();
+      Carril3[index3-1]->moveNote();
+      if(Carril3[index3-1]->active==0){
+           Carril3[index3-1]->deletePiece();
+           delete Carril3[index3-1];     
+           index3--; 
+            hasCar3= false; 
             VGA.setColor(160,82,45);
             VGA.drawLine(0,105,158,105);
       }
-    }
-  }
-   else if(index4>0){
-    for(int i = 0; i<index4; i++){
-      if(event==4 && Carril4[i]->active == 1 && (Carril4[i]->y>100 && Carril4[i]->y<104)){
-          Carril4[i]->active =0;
-          if(Carril4[i]->type == 'v'){
+    }else if(index4>0){
+      
+      
+    if(event==4 && Carril4[index4-1]->active == 1 && (Carril4[index4-1]->y>100 && Carril4[index4-1]->y<104)){
+          Carril4[index4-1]->active =0;
+          if(Carril4[index4-1]->type == 'v'){
           score+=ifpos;
            commentpos = comment(4,"g");
-          }else if(Carril4[i]->type == 'r'){
-        if(score>5)
+          }else if(Carril4[index4-1]->type == 'r'){
+          if(score>5)
           score-=ifneg;
            commentpos = comment(4,"b");
-          }else if(Carril4[i]->type == 'b'){
+          }else if(Carril4[index4-1]->type == 'b'){
           score+=ifbonus;
            commentpos = comment(4,"y");
           }
-          update_score(); 
+          update_score();
+         
+        
       }
-      Carril4[i]->drawPiece();
-      Carril4[i]->moveNote();
-      if(Carril4[i]->active==0){
-           Carril4[i]->deletePiece();
-           delete Carril4[i];   
+      Carril4[index4-1]->drawPiece();
+      Carril4[index4-1]->moveNote();
+      if(Carril4[index4-1]->active==0){
+           Carril4[index4-1]->deletePiece();
+           delete Carril4[index4-1];     
            index4--;  
+           hasCar4= false;
             VGA.setColor(160,82,45);
             VGA.drawLine(0,105,158,105);
       }
     }
-  }
+    
+  
+  
+  
     delay(15);
     
   
@@ -559,7 +639,7 @@ void drawBoard(){
 }
 
 void prepareLevel(const char * soundfile){
-  SoundPlay(soundfile);
+ // SoundPlay(soundfile);
   drawBoard();
   score_init();
   score = 0;
@@ -602,7 +682,7 @@ void changeLevel(int level){
   index3 =0;
   index4 = 0;
   if(nivel==1)
-   prepareLevel("sax.snd");
+  prepareLevel("sax.snd");
   if(nivel==2)
   prepareLevel("crazy.snd");
 }
@@ -610,13 +690,16 @@ void changeLevel(int level){
 void level(int modtime){
   while(true){
      contador++;
- if (PlayingSound) {
+/*if (PlayingSound) {
         AudioFillBuffer();
-    }
+    }*/
 
- if(contador%delaytime==0){
-   addRandomNote();
-   Serial.println(contador);
+ if(contador%modtime==0){
+   //addRandomNote(false);
+   addRandomNote(true);
+  addRandomNote(true);
+ //  handleMultipleMovement(readValues());
+   //Serial.println(contador);
  }
 if(nivel==1){
       if(contador==2750){
@@ -624,7 +707,7 @@ if(nivel==1){
            break;
       }else if(contador==2635){
            
-            VGA.setColor(BLACK);
+       VGA.setColor(BLACK);
     	VGA.printtext(50,0,"2",true);
     	VGA.setColor(YELLOW);
     	VGA.printtext(50,0,"END",true);	
@@ -680,11 +763,11 @@ if(nivel==1){
    
  }
  
-  if(hasComment && contador%modtime==0 && commentcarril!=0)
+  if(hasComment && (contador%modtime==0 )&& commentcarril!=0)
       removeComment(commentpos,commentcarril,ctype);
   
 
-  handleMovement(readValues());
+  handleMultipleMovement(readValues());
     
   }
   
